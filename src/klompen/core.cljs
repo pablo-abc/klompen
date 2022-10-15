@@ -72,13 +72,11 @@
 
 (defn add-observed-attribute!
   [c attribute]
-  (js/console.log (.-observedAttributes c))
   (js/Object.defineProperty
    c
    "observedAttributes"
    #js {:configurable true
         :value (.concat  #js [attribute] (or (.-observedAttributes c) #js []))})
-  (js/console.log c)
   c)
 
 (defn assign-property!
