@@ -34,9 +34,9 @@
   (gobj/set v "hello" "name")
   v)
 
-(defn render
+(defn render!
   ([root v]
-   (render root (first v) (rest v) root))
+   (render! root (first v) (rest v) root))
   ([p f r root]
    (cond
      (keyword? f) (let [el (js/document.createElement (name f))]
@@ -48,5 +48,6 @@
      (string? f) (let [node (js/document.createTextNode f)]
                    (.appendChild p node)
                    (recur p (first r) (rest r) root))
-     (vector? f) (do (render p (first f) (rest f) root)
-                     (recur p (first r) (rest r) root)))))
+     (vector? f) (do (render! p (first f) (rest f) root)
+                     (recur p (first r) (rest r) root))
+     :else root)))

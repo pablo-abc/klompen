@@ -1,7 +1,9 @@
 (ns demo.core
+  (:refer-clojure :exclude [abs])
   (:require
-   [klompen.core :refer [create-component connect! define! assign-property! observe-attributes!]]
-   [klompen.html :refer [render]]))
+   [klompen.core :refer [create-component connect! define! assign-property!]]
+   [klompen.styles :refer [set-styles!]]
+   [klompen.html :refer [render!]]))
 
 (def template
   [:button {:on/click #(set! (.-pressed %) (not (.-pressed %)))
@@ -15,12 +17,13 @@
    (create-component
     #(-> %
          (.attachShadow #js {:mode "open"})
-         (render template)))
+         (render! template)))
    (connect! #(print "Connected"))
    (assign-property! "pressed" false)
    (assign-property! "disabled" false)
+   (set-styles! "button{background:pink; border:none}")
    (define! "cljs-button"))
-  (render
+  (render!
    js/document.body
    [:div {:class "test-class"}
     [:h1 "testing custom elements"]

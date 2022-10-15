@@ -1,37 +1,15 @@
 (ns klompen.core
   (:require
    [klompen.cache :refer [cache bindings]]
+   [klompen.styles :refer [adopt-styles!]]
    [goog.object :as gobj]))
 
-(def default-values (js/Reflect.construct js/WeakMap #js []))
+(def default-values (js/Reflect.construct js/Map #js []))
 
 (defn- notify
   "Notify all bindings that values in the element have changed"
   [host]
   (mapv #(%) @(.get bindings host)))
-
-(defn create-component
-  "Creates constructor/class for a custom element"
-  ([] (create-component identity))
-  ([cb]
-   (let [constructor
-         (fn const []
-           (let [el
-                 (js/Reflect.construct js/HTMLElement #js [] const)]
-             (.set cache el (atom {}))
-             (.set bindings el (atom []))
-             (.call cb el el)
-             el))]
-     (set!
-      (.-prototype constructor)
-      (js/Object.create
-       (.-prototype js/HTMLElement)
-       #js {:connectedCallback
-            #js {:configurable true
-                 :value
-                 #(this-as this (notify this))}}))
-     (.set default-values constructor (atom {}))
-     constructor)))
 
 (defn assign-method!
   "Assigns a method to a class' prototype"
@@ -116,3 +94,28 @@
   [c element-name]
   (when (not (js/window.customElements.get element-name))
     (js/window.customElements.define element-name c)))
+
+(defn create-component
+  "Creates constructor/class for a custom element"
+  ([] (create-component identity))
+  ([cb]
+   (let [constructor
+         (fn const []
+           (let [el
+                 (js/Reflect.construct js/HTMLElement #js [] const)
+                 styles (gobj/get const "styles")]
+             (.set cache el (atom {}))
+             (.set bindings el (atom []))
+             (.call cb el el)
+             (adopt-styles! (or (.-shadowRoot el) el) styles)
+             el))]
+     (set!
+      (.-prototype constructor)
+      (js/Object.create
+       (.-prototype js/HTMLElement)
+       #js {:connectedCallback
+            #js {:configurable true
+                 :value
+                 #(this-as this (notify this))}}))
+     (.set default-values constructor (atom {}))
+     constructor)))
