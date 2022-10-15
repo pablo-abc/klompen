@@ -3,7 +3,7 @@
    [klompen.cache :refer [cache bindings]]
    [goog.object :as gobj]))
 
-(def default-values (atom {}))
+(def default-values (js/Reflect.construct js/WeakMap #js []))
 
 (defn- notify
   "Notify all bindings that values in the element have changed"
@@ -30,6 +30,7 @@
             #js {:configurable true
                  :value
                  #(this-as this (notify this))}}))
+     (.set default-values constructor (atom {}))
      constructor)))
 
 (defn assign-method!
@@ -55,7 +56,7 @@
    c
    "observedAttributes"
    #js {:configurable true
-        :value (clj->js attributes)})
+        :value (.concat (clj->js attributes) (or (.-observedAttributes c) #js []))})
   (let [proto (.-prototype c)
         super-cb (.-attributeChangedCallback proto)]
     (js/Object.defineProperty
@@ -71,29 +72,35 @@
 
 (defn add-observed-attribute!
   [c attribute]
-  (let [proto (js/Reflect.getPrototypeOf c)]
-    (js/console.log (.-observedAttributes proto))
-    (js/Object.defineProperty
-     proto
-     "observedAttributes"
-     #js {:configurable true
-          :value #js [attribute]})
-    (js/console.log proto)))
+  (js/console.log (.-observedAttributes c))
+  (js/Object.defineProperty
+   c
+   "observedAttributes"
+   #js {:configurable true
+        :value (.concat  #js [attribute] (or (.-observedAttributes c) #js []))})
+  (js/console.log c)
+  c)
 
 (defn assign-property!
   "Assigns a reactive property to the element"
   ([c property value] (assign-property! c property value identity))
   ([c property value setter]
-   (let [host (or (.-host c) c)]
-     (swap! (.get cache host) assoc (keyword property) value)
+   (let [proto (.-prototype c)]
+     (swap! (.get default-values c) assoc (keyword property) value)
+     (add-observed-attribute! c property)
      (js/Object.defineProperty
-      host
+      proto
       (name property)
       #js {:configurable true
-           :get #((keyword property) @(.get cache host))
-           :set #(do
-                   (swap! (.get cache host) assoc (keyword property) (setter % host))
-                   (notify host))}))
+           :get #(this-as
+                  this
+                  (when (not (contains? @(.get cache this) (keyword property)))
+                    (swap! (.get cache this) assoc (keyword property) ((keyword property) @(.get default-values c))))
+                  ((keyword property) @(.get cache this)))
+           :set #(this-as
+                  this
+                  (swap! (.get cache this) assoc (keyword property) (setter % this))
+                  (notify this))}))
    c))
 
 (defn connect!

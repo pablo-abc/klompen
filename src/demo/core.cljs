@@ -15,10 +15,10 @@
    (create-component
     #(-> %
          (.attachShadow #js {:mode "open"})
-         (assign-property! "pressed" false)
          (render template)))
    (connect! #(print "Connected"))
-   (observe-attributes! ["asdasd"] #(js/console.log ""))
+   (assign-property! "pressed" false)
+   (assign-property! "disabled" false)
    (define! "cljs-button"))
   (render
    js/document.body
