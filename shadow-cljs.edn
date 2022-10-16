@@ -1,13 +1,13 @@
 ;; shadow-cljs configuration
 {:source-paths
- ["src/main"
-  "src/dev"]
+ ["dev"
+  "src"]
 
  :dependencies
  [[garden "1.3.10"]]
 
  :dev-http {3000 "public"}
  :builds
- {:demo
+ {:dev
   {:target :browser
    :modules {:main {:init-fn demo.core/init!}}}}}

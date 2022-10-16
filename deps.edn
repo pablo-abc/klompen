@@ -1,4 +1,4 @@
-{:paths ["src/main"]
+{:paths ["src"]
  :deps {org.clojure/clojurescript {:mvn/version "1.11.60"}}
  :aliases
  {:build {:deps {io.github.seancorfield/build-clj

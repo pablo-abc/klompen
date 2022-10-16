@@ -3,7 +3,7 @@
   (:require [clojure.tools.build.api :as b] ; for b/git-count-revs
             [org.corfield.build :as bb]))
 
-(def lib 'net.clojars.klompen/klompen)
+(def lib 'net.clojars.pabloabc/klompen)
 
 (def version (format "0.0.%s" (b/git-count-revs nil)))
 
