@@ -4,16 +4,54 @@
 
 Utilities to create custom elements with reactive properties and declarative templating using ClojureScript.
 
-Pretty much a work in progress as of now. Not useable.
+Pretty much a work in progress as of now. Super basic functionality.
+
+## Usage
+
+The API of klompen relies on chaining function to add functionality to a custom element. It all starts with a call to `create-ce`. This creates a function that works as a constructor that can be defined as a custom element.
+
+`create-ce` optionally accepts a function as its first argument. This function is ran during instantiation, so it can be used to attach a shadow root and render to it. It receives the instance of the custom element as its argument.
+
+```clojure
+(create-ce
+  (fn [el]
+    (.attachShadow el #js {:mode "open"})))
+```
+
+Klompen also provides some extra utilities that help to modify the custom element. For example, `connect!` allows you to add a `connectedCallback` to the element.
+
+```clojure
+(def my-element (create-ce))
+
+(connect!
+  my-element
+  (fn [el] (print "Connected:" el)))
+```
+
+These functions can be chained using the threading macro.
 
 ## Example usage
 
 ```clojure
 (ns demo.core
   (:require
-   [klompen.core :refer [create-component connect! define! assign-property!]]
+   [klompen.core :refer [create-ce connect! define! assign-property! disconnect!]]
    [klompen.styles :refer [set-styles!]]
-   [klompen.html :refer [render!]]))
+   [klompen.html :refer [render!]]
+   [garden.core :refer [css]]))
+
+;; CSS is assigned as a string. Here we are using Garden
+;; to simplify the creation of it.
+(def styles (css [:* {:font-size "200%"}]
+                 [:span {:width "4rem"
+                         :display "inline-block"
+                         :text-align "center"}]
+                 [:button {:width "4rem"
+                           :height "4rem"
+                           :border "none"
+                           :border-radius "10px"
+                           :background-color "seagreen"
+                           :color "white"}]))
 
 ;; Define template using hiccup style syntax.
 ;; attributes and properties can react to state changes
@@ -21,40 +59,36 @@ Pretty much a work in progress as of now. Not useable.
 ;;
 ;; Events receive the element as first argument
 ;; and the event object as a second argument
-(def template
-  [:button {:on/click #(set! (.-pressed %) (not (.-pressed %)))
-            :pressed #(.-pressed %)
-            :prop/other (fn [host]
-                          (.-pressed host))} "Click me"])
+;;
+;; You can assign a function as a child to an element
+;; to make it update on property changes.
+(def template [[:button {:on/click
+                         #(set! (.-count %)
+                                (dec (.-count %)))} "-"]
+               [:span #(str (.-count %))]
+               [:button {:on/click
+                         #(set! (.-count %)
+                                (inc (.-count %)))} "+"]])
 
 (defn init! []
   (->
-  ;; create-component creates a custom element constructor
-   (create-component
-   ;; Its first argument can be a function that runs
-   ;; on instantiation
-   ;; This function receives the instance as its argument
+  ;; create-ce creates a custom element constructor
+   (create-ce
     #(-> %
          (.attachShadow #js {:mode "open"})
+         ;; The `render!` function renders the template
+         ;; in the shadow root
          (render! template)))
-  ;; helper methods  can be run on the constructor to
-  ;; modify the element
-
-  ;; connect! adds a connectedCallback method
+   (assign-property! "count" 0)
+   ;; sets styles to the element. Can be a list as well.
+   (set-styles! styles)
+   ;; connect! adds a connectedCallback method
    (connect! #(print "Connected"))
    ;; adds a disconnectedCallback method
    (disconnect! #(print "Disconnected"))
-    ;; adds a property that triggers updates on
-    ;; changes
-   (assign-property! "pressed" false)
-   (assign-property! "disabled" false)
-   ;; sets styles to the element. Can be a list as well.
-   (set-styles! "button{background:pink; border:none}")
-   (define! "cljs-button"))
+   (define! "my-counter"))
 
   (render!
    js/document.body
-   [:div
-    [:h1 "testing custom elements"]
-    [:cljs-button]]))
+   [:my-counter]))
 ```

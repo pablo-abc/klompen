@@ -1,30 +1,44 @@
 (ns demo.core
   (:require
-   [klompen.core :refer [create-component connect! define! assign-property! disconnect!]]
+   [klompen.core :refer [create-ce connect! define! assign-property! disconnect!]]
    [klompen.styles :refer [set-styles!]]
-   [klompen.html :refer [render!]]))
+   [klompen.html :refer [render!]]
+   [garden.core :refer [css]]))
 
-(def template
-  [:button {:on/click #(set! (.-pressed %) (not (.-pressed %)))
-            :pressed #(.-pressed %)
-            :prop/other #(.-pressed %)} "Click me"])
+(def styles (css [:* {:font-size "200%"}]
+                 [:span {:width "4rem"
+                         :display "inline-block"
+                         :text-align "center"}]
+                 [:button {:width "4rem"
+                           :height "4rem"
+                           :border "none"
+                           :border-radius "10px"
+                           :background-color "seagreen"
+                           :color "white"}]))
+
+(def template [[:button {:on/click
+                         #(set! (.-count %)
+                                (dec (.-count %)))} "-"]
+               [:span #(str (.-count %))]
+               [:button {:on/click
+                         #(set! (.-count %)
+                                (inc (.-count %)))} "+"]])
 
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn init! []
   (->
-   (create-component
+   (create-ce
     #(-> %
          (.attachShadow #js {:mode "open"})
          (render! template)))
+   (assign-property! "count" 0)
+   (set-styles! styles)
    (connect! #(print "Connected"))
    (disconnect! #(print "Disconnected"))
-   (assign-property! "pressed" false)
-   (assign-property! "disabled" false)
-   (set-styles! "button{background:pink; border:none}")
-   (define! "cljs-button"))
+   (define! "my-counter"))
 
   (render!
    js/document.body
    [:div
     [:h1 "testing custom elements"]
-    [:cljs-button]]))
+    [:my-counter]]))

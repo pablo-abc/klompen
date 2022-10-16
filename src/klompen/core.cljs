@@ -96,9 +96,9 @@
     (js/window.customElements.define element-name c))
   c)
 
-(defn ^:export create-component
+(defn ^:export create-ce
   "Creates constructor/class for a custom element"
-  ([] (create-component identity))
+  ([] (create-ce identity))
   ([cb]
    (let [constructor
          (fn const []
