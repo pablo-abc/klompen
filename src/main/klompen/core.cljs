@@ -11,7 +11,7 @@
   [host]
   (mapv #(%) @(.get bindings host)))
 
-(defn assign-method!
+(defn ^:export assign-method!
   "Assigns a method to a class' prototype"
   [c callback-key callback]
   (let [proto (.-prototype c)
@@ -27,7 +27,7 @@
             (callback this))})
     c))
 
-(defn observe-attributes!
+(defn ^:export observe-attributes!
   "Assigns `observedAttributes` to the custom element"
   [c attributes cb]
   (js/Object.defineProperty
@@ -48,7 +48,7 @@
             (cb this %1 %2 %3))}))
   c)
 
-(defn add-observed-attribute!
+(defn ^:export add-observed-attribute!
   [c attribute]
   (js/Object.defineProperty
    c
@@ -57,7 +57,7 @@
         :value (.concat  #js [attribute] (or (.-observedAttributes c) #js []))})
   c)
 
-(defn assign-property!
+(defn ^:export assign-property!
   "Assigns a reactive property to the element"
   ([c property value] (assign-property! c property value identity))
   ([c property value setter]
@@ -79,23 +79,24 @@
                   (notify this))}))
    c))
 
-(defn connect!
+(defn ^:export connect!
   "Assigns connectedCallback to element"
   [c cb]
   (assign-method! c :connectedCallback cb))
 
-(defn disconnect!
+(defn ^:export disconnect!
   "Assigns disconnectedCallback to element"
   [c cb]
   (assign-method! c :disconnectedCallback cb))
 
-(defn define!
+(defn ^:export define!
   "Registers as custom element"
   [c element-name]
   (when (not (js/window.customElements.get element-name))
-    (js/window.customElements.define element-name c)))
+    (js/window.customElements.define element-name c))
+  c)
 
-(defn create-component
+(defn ^:export create-component
   "Creates constructor/class for a custom element"
   ([] (create-component identity))
   ([cb]

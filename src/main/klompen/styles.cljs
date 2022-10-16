@@ -1,6 +1,6 @@
 (ns klompen.styles)
 
-(defn supports-adopting-style-sheets?
+(defn ^:export supports-adopting-style-sheets?
   "Tells wether the current browser supports constructable style sheets"
   []
   (and
@@ -13,7 +13,7 @@
 
 (defonce cache (atom {}))
 
-(defn create-style-sheet
+(defn ^:export create-style-sheet
   ([css-text]
    (if (get @cache css-text)
      (get @cache css-text)
@@ -29,7 +29,7 @@
     (.appendChild root style)
     root))
 
-(defn adopt-styles!
+(defn ^:export adopt-styles!
   [root styles]
   (let [styles-v (if (coll? styles) styles [styles])]
     (if (supports-adopting-style-sheets?)
@@ -43,7 +43,7 @@
       (mapv #(append-styles! root %) styles-v)))
   root)
 
-(defn set-styles!
+(defn ^:export set-styles!
   [c styles]
   (js/Object.defineProperty
    c
