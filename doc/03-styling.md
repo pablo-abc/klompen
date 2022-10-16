@@ -2,7 +2,7 @@
 
 You can add styles to the custom element by using the `set-styles!` function.
 
-While you could perfectly add a `[:style]` tag to the template, the `set-styles!` function allows Klompen to add the styles constructable style sheets if they're supported by your browser (and defaults to style tags if not).
+While you could perfectly add a `[:style]` tag to the template, the `set-styles!` function allows Klompen to add the styles as [constructable stylesheets](https://web.dev/constructable-stylesheets/) if they're supported by your browser (and defaults to style tags if not).
 
 Example:
 

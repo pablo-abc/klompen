@@ -1,6 +1,7 @@
 # Klompen - Custom Elements with ClojureScript
 
 [![Clojars Project](https://img.shields.io/clojars/v/net.clojars.pabloabc/klompen.svg)](https://clojars.org/net.clojars.pabloabc/klompen)
+[![cljdoc badge](https://cljdoc.org/badge/net.clojars.pabloabc/klompen)](https://cljdoc.org/d/net.clojars.pabloabc/klompen)
 
 Utilities to create custom elements with reactive properties and declarative templating using ClojureScript.
 
