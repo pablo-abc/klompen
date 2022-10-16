@@ -1,25 +1,17 @@
 (ns klompen.html
   (:require
-   [klompen.cache :refer [bindings]]
+   [klompen.signal :refer [create-effect]]
    [goog.object :as gobj]))
 
 (defn- define-property-binding! [el key value host]
-  (gobj/set el key (value host))
-  (swap!
-   (.get bindings host)
-   conj
+  (create-effect
    #(gobj/set el key (value host))))
 
 (defn- define-attribute-binding! [el key value host]
-  (swap!
-   (.get bindings host)
-   conj
-   #(.setAttribute el key (value host))))
+  (create-effect #(.setAttribute el key (value host))))
 
 (defn- define-boolean-attribute-binding! [el key value host]
-  (swap!
-   (.get bindings host)
-   conj
+  (create-effect
    #(if (value host)
       (.setAttribute el key "")
       (.removeAttribute el key))))
@@ -41,7 +33,9 @@
   (when (seq r) (recur el (first r) (rest r) root)))
 
 (defn render!
-  "Renders hiccup to the provided HTML node or shadow root"
+  "Renders hiccup to the provided HTML node or shadow root
+   
+   Multiple calls to the same node replace all its children"
   ([root v]
    (let [fragment (js/document.createDocumentFragment)]
      (render! fragment (first v) (rest v) root)
@@ -53,9 +47,7 @@
                     (recur el (first r) (rest r) root))
      (fn? f) (let [host (or (.-host root) root)
                    fragment (js/document.createDocumentFragment)]
-               (swap!
-                (.get bindings host)
-                conj
+               (create-effect
                 #(do
                    (render! fragment (f host) r root)
                    (.replaceChildren p fragment))))

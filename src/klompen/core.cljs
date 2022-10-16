@@ -1,15 +1,11 @@
 (ns klompen.core
   (:require
-   [klompen.cache :refer [cache bindings]]
    [klompen.styles :refer [adopt-styles!]]
+   [klompen.signal :refer [create-signal create-effect]]
    [goog.object :as gobj]))
 
-(def default-values (js/Reflect.construct js/Map #js []))
+(def properties (atom {}))
 
-(defn- notify
-  "Notify all bindings that values in the element have changed"
-  [host]
-  (mapv #(%) @(.get bindings host)))
 
 (defn ^:export assign-method!
   "Assigns a method to a class' prototype"
@@ -61,22 +57,10 @@
   "Assigns a reactive property to the element"
   ([c property value] (assign-property! c property value identity))
   ([c property value setter]
-   (let [proto (.-prototype c)]
-     (swap! (.get default-values c) assoc (keyword property) value)
-     (add-observed-attribute! c property)
-     (js/Object.defineProperty
-      proto
-      (name property)
-      #js {:configurable true
-           :get #(this-as
-                  this
-                  (when (not (contains? @(.get cache this) (keyword property)))
-                    (swap! (.get cache this) assoc (keyword property) ((keyword property) @(.get default-values c))))
-                  ((keyword property) @(.get cache this)))
-           :set #(this-as
-                  this
-                  (swap! (.get cache this) assoc (keyword property) (setter % this))
-                  (notify this))}))
+   (swap! properties assoc-in [c (keyword property)] {:value value
+                                                      :type setter
+                                                      :attribute property})
+   (add-observed-attribute! c property)
    c))
 
 (defn ^:export connect!
@@ -96,6 +80,17 @@
     (js/window.customElements.define element-name c))
   c)
 
+(defn- setup-property! [el property value setter]
+  (let [[v set-v] (create-signal value)]
+    (js/Object.defineProperty
+     el
+     (name property)
+     #js {:configurable true
+          :get (fn []
+                 (v))
+          :set #(do
+                  (set-v (setter % el)))})))
+
 (defn ^:export create-ce
   "Creates constructor/class for a custom element"
   ([] (create-ce identity))
@@ -105,18 +100,25 @@
            (let [el
                  (js/Reflect.construct js/HTMLElement #js [] const)
                  styles (gobj/get const "styles")]
-             (.set cache el (atom {}))
-             (.set bindings el (atom []))
+             (mapv
+              #(setup-property! el (get % 0) (:value (get % 1)) (:type (get % 1)))
+              (get @properties const))
              (.call cb el el)
              (adopt-styles! (or (.-shadowRoot el) el) styles)
              el))]
      (set!
       (.-prototype constructor)
       (js/Object.create
-       (.-prototype js/HTMLElement)
-       #js {:connectedCallback
-            #js {:configurable true
-                 :value
-                 #(this-as this (notify this))}}))
-     (.set default-values constructor (atom {}))
+       (.-prototype js/HTMLElement)))
+     (swap! properties assoc constructor {})
      constructor)))
+
+(comment
+  (->
+   (create-ce)
+   (assign-property! "test" false)
+   (#(get @properties %))
+   (->>
+    (map #(print %))))
+  (assign-property! (create-ce) "test" false)
+  properties)

@@ -14,6 +14,7 @@
 (defonce cache (atom {}))
 
 (defn ^:export create-style-sheet
+  "Creates a constructable style sheet"
   ([css-text]
    (if (get @cache css-text)
      (get @cache css-text)
@@ -23,13 +24,16 @@
        (swap! cache assoc css-text style-sheet)
        style-sheet))))
 
-(defn- append-styles! [root style-text]
+(defn- append-styles!
+  [root style-text]
   (let [style (js/document.createElement "style")]
     (set! (.-textContent style) style-text)
     (.appendChild root style)
     root))
 
 (defn ^:export adopt-styles!
+  "Assigns and adopted style sheet to the element if supported.
+   If not, appends a `style` tag to the markup"
   [root styles]
   (let [styles-v (if (coll? styles) styles [styles])]
     (if (supports-adopting-style-sheets?)
@@ -45,7 +49,7 @@
 
 (defn ^:export set-styles!
   "Assigns styles to the custom element.
-   These styles get adopetd using constructable
+   These styles get adopted using constructable
    style sheets if supported. If not, they're appended
    as style tags"
   [c styles]
