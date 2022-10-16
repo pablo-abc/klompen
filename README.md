@@ -1,5 +1,7 @@
 # Klompen - Custom Elements with ClojureScript
 
+[![Clojars Project](https://img.shields.io/clojars/v/net.clojars.pabloabc/klompen.svg)](https://clojars.org/net.clojars.pabloabc/klompen)
+
 Utilities to create custom elements with reactive properties and declarative templating using ClojureScript.
 
 Pretty much a work in progress as of now. Not useable.
@@ -31,6 +33,7 @@ Pretty much a work in progress as of now. Not useable.
    (create-component
    ;; Its first argument can be a function that runs
    ;; on instantiation
+   ;; This function receives the instance as its argument
     #(-> %
          (.attachShadow #js {:mode "open"})
          (render! template)))

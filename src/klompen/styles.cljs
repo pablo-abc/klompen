@@ -44,6 +44,10 @@
   root)
 
 (defn ^:export set-styles!
+  "Assigns styles to the custom element.
+   These styles get adopetd using constructable
+   style sheets if supported. If not, they're appended
+   as style tags"
   [c styles]
   (js/Object.defineProperty
    c

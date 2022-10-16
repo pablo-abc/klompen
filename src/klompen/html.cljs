@@ -30,11 +30,8 @@
       :else (.setAttribute el key value)))
   (when (seq r) (recur el (first r) (rest r) root)))
 
-(let [v #js {}]
-  (gobj/set v "hello" "name")
-  v)
-
 (defn render!
+  "Renders hiccup to the provided HTML node (root)"
   ([root v]
    (render! root (first v) (rest v) root))
   ([p f r root]
