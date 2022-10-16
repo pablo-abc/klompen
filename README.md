@@ -74,7 +74,10 @@ These functions can be chained using the threading macro.
   (->
   ;; create-ce creates a custom element constructor
    (create-ce)
-   (add-property! "count" 0)
+   ;; adds a reactive property to the custom element.
+   ;; the options map is optional, and `:type`
+   ;; has a default value of `js/String`.
+   (add-property! "count" 0 {:type js/Number})
    ;; sets styles to the element. Can be a list as well.
    (set-styles! styles)
    ;; sets html content of the custom element. Can only

@@ -3,9 +3,10 @@
    [klompen.styles :refer [adopt-styles!]]
    [klompen.signal :refer [create-signal]]
    [klompen.html :refer [render! templates]]
+   [clojure.string :refer [lower-case]]
    [goog.object :as gobj]))
 
-(def properties (atom {}))
+(def ^:private properties (atom {}))
 
 (defn ^:export add-method!
   "Assigns a method to a class' prototype"
@@ -34,7 +35,7 @@
   (let [proto (.-prototype c)
         super-cb (.-attributeChangedCallback proto)]
     (js/Object.defineProperty
-     (.-prototype c)
+     proto
      "attributeChangedCallback"
      #js {:configurable true
           :value
@@ -45,23 +46,45 @@
   c)
 
 (defn ^:export add-observed-attribute!
-  [c attribute]
-  (js/Object.defineProperty
-   c
-   "observedAttributes"
-   #js {:configurable true
-        :value (.concat  #js [attribute] (or (.-observedAttributes c) #js []))})
-  c)
+  ([c attribute] (add-observed-attribute! c attribute identity))
+  ([c attribute cb]
+   (js/Object.defineProperty
+    c
+    "observedAttributes"
+    #js {:configurable true
+         :value (.concat  #js [attribute] (or (.-observedAttributes c) #js []))})
+   (let [proto (.-prototype c)
+         super-cb (.-attributeChangedCallback proto)]
+     (js/Object.defineProperty
+      (.-prototype c)
+      "attributeChangedCallback"
+      #js {:configurable true
+           :value
+           #(this-as
+             this
+             (when (fn? super-cb) (.call super-cb this %1 %2 %3))
+             (cb this %1 %2 %3))}))
+   c))
 
 (defn ^:export add-property!
   "Assigns a reactive property to the element"
-  ([c property value] (add-property! c property value identity))
-  ([c property value setter]
-   (swap! properties assoc-in [c (keyword property)] {:value value
-                                                      :type setter
-                                                      :attribute property})
-   (add-observed-attribute! c property)
-   c))
+  ([c property value] (add-property! c
+                                     property
+                                     value {}))
+  ([c property value opts]
+   (let [attribute (if (some? (:attribute opts)) (:attribute opts) (lower-case property))
+         type (or (:type opts) js/String)]
+     (swap! properties assoc-in [c (keyword property)] {:value value
+                                                        :type type
+                                                        :attribute attribute})
+     (when attribute
+       (add-observed-attribute!
+        c
+        property
+        #(when
+          (= %2 attribute)
+           (gobj/set %1 property %4))))
+     c)))
 
 (defn ^:export connect!
   "Assigns connectedCallback to element"
@@ -92,7 +115,13 @@
                   (set-v (setter % el)))})))
 
 (defn ^:export create-ce
-  "Creates constructor/class for a custom element"
+  "Creates constructor/class for a custom element.
+   
+   Example:
+   ```
+   (-> (create-ce)
+       (set-html! [:h1 \"A title\"])
+       (define! \"my-element\"))"
   ([] (create-ce #(.attachShadow % #js {:mode "open"})))
   ([cb]
    (let [constructor

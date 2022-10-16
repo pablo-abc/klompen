@@ -35,10 +35,28 @@
   (when (seq r) (recur el (first r) (rest r) root)))
 
 (defn set-html!
-  "Sets html content of the custom element"
+  "Sets html content of the custom element
+   
+   Example:
+   ```
+   (-> (create-ce)
+       (set-html! [:div \"Hello world!\"]))
+   ```"
   [c hc]
   (swap! templates assoc c hc)
   c)
+
+(defn- get-tag-name
+  [key]
+  (re-find #"^[^.|^#]*" (name key)))
+
+(defn- get-classes
+  [key]
+  (re-seq #"\.[^.|^#]*" (name key)))
+
+(defn- get-id
+  [key]
+  (re-find #"#[^.|^#]*" (name key)))
 
 (defn render!
   "Renders hiccup to the provided HTML node or shadow root
@@ -50,7 +68,11 @@
      (.replaceChildren root fragment)))
   ([p f r root]
    (cond
-     (keyword? f) (let [el (js/document.createElement (name f))]
+     (keyword? f) (let [el (js/document.createElement (get-tag-name f))
+                        classes (get-classes f)
+                        id (get-id f)]
+                    (when (some? id) (.setAttribute el "id" (subs id 1)))
+                    (when (some? classes) (mapv #(.add el.classList (subs % 1)) classes))
                     (.appendChild p el)
                     (recur el (first r) (rest r) root))
      (fn? f) (let [host (or (.-host root) root)

@@ -1,12 +1,24 @@
 (ns klompen.signal)
 
-(defonce context (atom []))
+(defonce ^:private context (atom []))
 
 (defn- subscribe [running subscriptions]
   (swap! subscriptions conj running)
   (swap! (:dependencies running) conj subscriptions))
 
-(defn create-signal [v]
+(defn create-signal
+  "Creates a signal. Which is a function that contains
+   a value whose changes can be tracker
+   
+   Example:
+   ```
+   (let [[value set-value] (create-signal 0)]
+     (print (value)) ; => 0
+     (set-value 5)
+     (print (value)) ; => 5
+   )
+   ```"
+  [v]
   (let [value (atom v)
         subscriptions (atom #{})]
     [(fn []
@@ -26,7 +38,22 @@
    #(swap! % disj running) @(:dependencies running))
   (reset! (:dependencies running) #{}))
 
-(defn create-effect [effect-fn]
+(defn create-effect
+  "Accepts a function that runs every time its dependencies change.
+   Its dependencies being signals being read within the function
+   
+   Example
+   ```
+   (let [[value set-value] (create-signal 0)]
+     (create-effect #(print (value)))
+     (set-value 1)
+     (set-value 2))
+     ;; Prints:
+     ;; => 0
+     ;; => 1
+     ;; => 2
+   ```"
+  [effect-fn]
   (let [execute (fn [running]
                   (cleanup running)
                   (swap! context conj running)
@@ -35,11 +62,3 @@
                     (finally (swap! context pop))))
         running {:dependencies (atom #{})}]
     (execute (assoc running :execute (fn [] (execute running))))))
-
-(comment
-  (let [[n set-n]
-        (create-signal 0)]
-    (create-effect #(print (n)))
-    (set-n 2)
-    (set-n 5)
-    nil))
