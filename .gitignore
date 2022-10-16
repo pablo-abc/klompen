@@ -23,3 +23,4 @@ pom.xml.asc
 .clj-kondo/
 .shadow-cljs/
 .calva/
+.cpcache/
