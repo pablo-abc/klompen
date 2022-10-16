@@ -3,6 +3,8 @@
    [klompen.signal :refer [create-effect]]
    [goog.object :as gobj]))
 
+(def templates (atom {}))
+
 (defn- define-property-binding! [el key value host]
   (create-effect
    #(gobj/set el key (value host))))
@@ -31,6 +33,12 @@
       (fn? value) (define-attribute-binding! el key value host)
       :else (.setAttribute el key value)))
   (when (seq r) (recur el (first r) (rest r) root)))
+
+(defn set-html!
+  "Sets html content of the custom element"
+  [c hc]
+  (swap! templates assoc c hc)
+  c)
 
 (defn render!
   "Renders hiccup to the provided HTML node or shadow root

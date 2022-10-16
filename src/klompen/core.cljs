@@ -1,13 +1,13 @@
 (ns klompen.core
   (:require
    [klompen.styles :refer [adopt-styles!]]
-   [klompen.signal :refer [create-signal create-effect]]
+   [klompen.signal :refer [create-signal]]
+   [klompen.html :refer [render! templates]]
    [goog.object :as gobj]))
 
 (def properties (atom {}))
 
-
-(defn ^:export assign-method!
+(defn ^:export add-method!
   "Assigns a method to a class' prototype"
   [c callback-key callback]
   (let [proto (.-prototype c)
@@ -53,9 +53,9 @@
         :value (.concat  #js [attribute] (or (.-observedAttributes c) #js []))})
   c)
 
-(defn ^:export assign-property!
+(defn ^:export add-property!
   "Assigns a reactive property to the element"
-  ([c property value] (assign-property! c property value identity))
+  ([c property value] (add-property! c property value identity))
   ([c property value setter]
    (swap! properties assoc-in [c (keyword property)] {:value value
                                                       :type setter
@@ -66,12 +66,12 @@
 (defn ^:export connect!
   "Assigns connectedCallback to element"
   [c cb]
-  (assign-method! c :connectedCallback cb))
+  (add-method! c :connectedCallback cb))
 
 (defn ^:export disconnect!
   "Assigns disconnectedCallback to element"
   [c cb]
-  (assign-method! c :disconnectedCallback cb))
+  (add-method! c :disconnectedCallback cb))
 
 (defn ^:export define!
   "Registers as custom element"
@@ -93,7 +93,7 @@
 
 (defn ^:export create-ce
   "Creates constructor/class for a custom element"
-  ([] (create-ce identity))
+  ([] (create-ce #(.attachShadow % #js {:mode "open"})))
   ([cb]
    (let [constructor
          (fn const []
@@ -104,21 +104,11 @@
               #(setup-property! el (get % 0) (:value (get % 1)) (:type (get % 1)))
               (get @properties const))
              (.call cb el el)
+             (render! (or (.-shadowRoot el) el) (get @templates const))
              (adopt-styles! (or (.-shadowRoot el) el) styles)
              el))]
      (set!
       (.-prototype constructor)
       (js/Object.create
        (.-prototype js/HTMLElement)))
-     (swap! properties assoc constructor {})
      constructor)))
-
-(comment
-  (->
-   (create-ce)
-   (assign-property! "test" false)
-   (#(get @properties %))
-   (->>
-    (map #(print %))))
-  (assign-property! (create-ce) "test" false)
-  properties)

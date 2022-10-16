@@ -1,8 +1,8 @@
 (ns demo.core
   (:require
-   [klompen.core :refer [create-ce connect! define! assign-property! disconnect!]]
+   [klompen.core :refer [create-ce connect! define! add-property! disconnect!]]
    [klompen.styles :refer [set-styles!]]
-   [klompen.html :refer [render!]]
+   [klompen.html :refer [render! set-html!]]
    [garden.core :refer [css]]))
 
 (def styles (css [:* {:font-size "200%"}]
@@ -27,12 +27,10 @@
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn init! []
   (->
-   (create-ce
-    #(-> %
-         (.attachShadow #js {:mode "open"})
-         (render! template)))
-   (assign-property! "count" 0)
+   (create-ce)
+   (add-property! "count" 0)
    (set-styles! styles)
+   (set-html! template)
    (connect! #(print "Connected"))
    (disconnect! #(print "Disconnected"))
    (define! "my-counter"))

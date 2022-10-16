@@ -10,12 +10,12 @@ Pretty much a work in progress as of now. Super basic functionality.
 
 The API of klompen relies on chaining function to add functionality to a custom element. It all starts with a call to `create-ce`. This creates a function that works as a constructor that can be defined as a custom element.
 
-`create-ce` optionally accepts a function as its first argument. This function is ran during instantiation, so it can be used to attach a shadow root and render to it. It receives the instance of the custom element as its argument.
+`create-ce` optionally accepts a function as its first argument. This function is run during instantiation. By default it attaches an "open" shadow DOM to the element. This allows you to modify this behaviour. It receives the instance of the custom element as its argument.
 
 ```clojure
 (create-ce
   (fn [el]
-    (.attachShadow el #js {:mode "open"})))
+    (.attachShadow el #js {:mode "closed"})))
 ```
 
 Klompen also provides some extra utilities that help to modify the custom element. For example, `connect!` allows you to add a `connectedCallback` to the element.
@@ -35,9 +35,9 @@ These functions can be chained using the threading macro.
 ```clojure
 (ns demo.core
   (:require
-   [klompen.core :refer [create-ce connect! define! assign-property! disconnect!]]
+   [klompen.core :refer [create-ce connect! define! add-property! disconnect!]]
    [klompen.styles :refer [set-styles!]]
-   [klompen.html :refer [render!]]
+   [klompen.html :refer [render! set-html!]]
    [garden.core :refer [css]]))
 
 ;; CSS is assigned as a string. Here we are using Garden
@@ -73,21 +73,22 @@ These functions can be chained using the threading macro.
 (defn init! []
   (->
   ;; create-ce creates a custom element constructor
-   (create-ce
-    #(-> %
-         (.attachShadow #js {:mode "open"})
-         ;; The `render!` function renders the template
-         ;; in the shadow root
-         (render! template)))
-   (assign-property! "count" 0)
+   (create-ce)
+   (add-property! "count" 0)
    ;; sets styles to the element. Can be a list as well.
    (set-styles! styles)
+   ;; sets html content of the custom element. Can only
+   ;; be used with a shadow DOM (hiccup-like)
+   (set-html! template)
    ;; connect! adds a connectedCallback method
    (connect! #(print "Connected"))
    ;; adds a disconnectedCallback method
    (disconnect! #(print "Disconnected"))
    (define! "my-counter"))
 
+  ;; renders the hiccup on the element passed as
+  ;; first argument. Calls to the same element
+  ;; replace all children.
   (render!
    js/document.body
    [:my-counter]))
