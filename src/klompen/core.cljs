@@ -121,7 +121,8 @@
    ```
    (-> (create-ce)
        (set-html! [:h1 \"A title\"])
-       (define! \"my-element\"))"
+       (define! \"my-element\"))
+   ```"
   ([] (create-ce #(.attachShadow % #js {:mode "open"})))
   ([cb]
    (let [constructor
